@@ -343,3 +343,72 @@ contract escape2sun {
         if (msg.value != listingTollWei) revert E2S_TollRipple(msg.value, listingTollWei);
 
         jettyId = nextJettyId;
+        unchecked {
+            nextJettyId = jettyId + 1;
+        }
+
+        _jetties[jettyId] = JettyNode({
+            monikerSlug: monikerSlug,
+            hostHarbor: hostHarbor,
+            spawnedAt: uint64(block.timestamp),
+            pinZone: pinZone,
+            tierBand: tierBand,
+            muted: false,
+            listingLodestar: uint128(
+                uint256(keccak256(abi.encodePacked(chartSalt, monikerSlug, pinZone, hostHarbor, jettyId)))
+            )
+        });
+
+        unchecked {
+            uint256 idx = _hostJettyCount[hostHarbor];
+            _hostJettyAt[hostHarbor][idx] = jettyId;
+            _hostJettyCount[hostHarbor] = idx + 1;
+        }
+
+        harborChestWei += msg.value;
+        lifetimeListingWei += msg.value;
+        emit HarborChestTopped(msg.value);
+        emit JettyAnchored(jettyId, hostHarbor, monikerSlug, pinZone, tierBand);
+    }
+
+    function muteJetty(uint256 jettyId) external curatorOrDirector {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        j.muted = true;
+        emit JettyMuted(jettyId, msg.sender);
+    }
+
+    function relightJetty(uint256 jettyId) external curatorOrDirector {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        j.muted = false;
+        emit JettyLitAgain(jettyId, msg.sender);
+    }
+
+    function stampPostcard(
+        uint256 jettyId,
+        uint8 lodging,
+        uint8 shoreline,
+        uint8 concierge,
+        bytes32 headlineHash,
+        bytes32 blurbHash
+    ) external notMonsoon {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        if (j.muted) revert E2S_JettyMuted();
+
+        if (block.timestamp < _lastReviewAt[msg.sender] + REVIEW_COOLDOWN_SEC) {
+            revert E2S_SurfCooldown(uint64(_lastReviewAt[msg.sender] + REVIEW_COOLDOWN_SEC));
+        }
+
+        Postcard storage p = _postcards[jettyId][msg.sender];
+        if (p.etchedAt != 0 && !p.shredded) revert E2S_PostcardDuplicate();
+        if (headlineHash == bytes32(0) || blurbHash == bytes32(0)) revert E2S_PostcardBlank();
+
+        uint8 L = ShoreBits.clampStars(lodging);
+        uint8 S = ShoreBits.clampStars(shoreline);
+        uint8 C = ShoreBits.clampStars(concierge);
+
+        p.starsLodging = L;
+        p.starsShoreline = S;
+        p.starsConcierge = C;
