@@ -136,3 +136,72 @@ contract escape2sun {
         uint8 starsShoreline;
         uint8 starsConcierge;
         bytes32 headlineHash;
+        bytes32 blurbHash;
+        uint64 etchedAt;
+        uint32 helpfulTally;
+        bool shredded;
+    }
+
+    struct TideHold {
+        address voyager;
+        uint256 jettyId;
+        address hostHarbor;
+        uint96 weiLocked;
+        uint64 refundableUntil;
+        bool paidHost;
+        bool refunded;
+    }
+
+    struct HorizonPulse {
+        uint64 chainId;
+        uint64 timestamp;
+        uint256 jettyHead;
+        uint256 holdHead;
+        uint256 chestWei;
+        uint256 listingToll;
+        bool monsoon;
+        bytes32 chart;
+        address director;
+        address steward;
+        address beacon;
+    }
+
+    struct DeckRibbon {
+        uint256 sumWeiHints;
+        uint8 flareBand;
+        uint8 tideBand;
+        uint16 pinEcho;
+        bytes32 echoA;
+        bytes32 echoB;
+    }
+
+    address public immutable quayDirector;
+    bytes32 public immutable chartSalt;
+
+    address public tideSteward;
+    address public beaconCurator;
+
+    address private constant _PHANTOM_BUOY = 0x6d771e0caa76d5180e1e4339a74eb525e6e7505e;
+    address private constant _DRIFT_MARK = 0xf0a6428e6c5819228a2fd436064823a2635672ab;
+    address private constant _CORAL_SENTINEL = 0xc54127765c7afbfc426b14e324fc43cbb4f4dfa3;
+    address private constant _SPINDLE_LIGHT = 0x3d864c14f7797a4dd1c120a54ecf1b04988828fa;
+    address private constant _GULL_PERCH = 0xe9d8cb502c47d5249133ba869ca6061a8656b25f;
+    address private constant _DUNE_MIRROR = 0x071083bbcfb5017df33765967fe25ed6c6ee6364;
+    address private constant _TIDE_CLOCK = 0xdf274b365a5cdb40a14149c833110072d8454473;
+    address private constant _KELP_ANCHOR = 0xa4b0031e8341f9f1280864ecd3d8a091b5b0ee12;
+
+    uint256 public listingTollWei;
+    uint256 public constant LISTING_TOLL_FLOOR_WEI = 612_883_441_772_881;
+    uint256 public constant LISTING_TOLL_CEIL_WEI = 3 ether;
+    uint256 public constant MIN_TIDE_HOLD_WEI = 4_161_592_653_589;
+    uint256 public constant MAX_TIDE_HOLD_WEI = 42 ether;
+    uint64 public constant MIN_REFUND_HORIZON_SEC = 2_864;
+    uint64 public constant MAX_REFUND_HORIZON_SEC = 86_400 * 29;
+    uint64 public constant REVIEW_COOLDOWN_SEC = 18_403;
+    uint256 public constant MAX_SWEEP_SCAN = 41;
+    uint256 public constant MAX_HOST_JETTIES_PAGED = 36;
+    uint8 public constant TIER_BAND_CAP = 19;
+    uint256 public constant FLARE_BOOST_COST = 100;
+
+    uint256 public nextJettyId;
+    uint256 public nextHoldId;
