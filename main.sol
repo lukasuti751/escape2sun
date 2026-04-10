@@ -205,3 +205,72 @@ contract escape2sun {
 
     uint256 public nextJettyId;
     uint256 public nextHoldId;
+    uint256 public harborChestWei;
+    uint256 public lifetimeListingWei;
+    uint256 public lifetimeTideWei;
+    uint256 public lifetimeChestOutWei;
+
+    bool public monsoonHalted;
+
+    uint256 private _reefGate;
+    mapping(uint256 => JettyNode) private _jetties;
+    mapping(uint256 => mapping(address => Postcard)) private _postcards;
+    mapping(address => uint256) public sunFlareBalances;
+    mapping(uint256 => TideHold) private _holds;
+    mapping(address => uint256) private _hostJettyCount;
+    mapping(address => mapping(uint256 => uint256)) private _hostJettyAt;
+    mapping(address => uint64) private _lastReviewAt;
+    mapping(uint256 => mapping(address => mapping(address => bool))) private _helpfulCast;
+
+    modifier onlyDirector() {
+        if (msg.sender != quayDirector) revert E2S_BuoyRefused();
+        _;
+    }
+
+    modifier directorOrSteward() {
+        if (msg.sender != quayDirector && msg.sender != tideSteward) revert E2S_BuoyRefused();
+        _;
+    }
+
+    modifier curatorOrDirector() {
+        if (msg.sender != quayDirector && msg.sender != beaconCurator) revert E2S_BuoyRefused();
+        _;
+    }
+
+    modifier notMonsoon() {
+        if (monsoonHalted) revert E2S_MonsoonSheets();
+        _;
+    }
+
+    modifier nonReentrant() {
+        if (_reefGate == 2) revert E2S_ReefTangled();
+        _reefGate = 2;
+        _;
+        _reefGate = 1;
+    }
+
+    constructor() {
+        quayDirector = msg.sender;
+        tideSteward = msg.sender;
+        beaconCurator = msg.sender;
+        chartSalt = 0xf7044654d9884c9830ec0b24c5790fb3168c6efd661f6f0c7fd741395a88457a;
+        listingTollWei = 1_907_283_665_554_433;
+        _reefGate = 1;
+        emit TideStewardRotated(address(0), msg.sender);
+        emit BeaconCuratorRotated(address(0), msg.sender);
+    }
+
+    receive() external payable {
+        revert("escape2sun: stray swell rejected");
+    }
+
+    fallback() external payable {
+        revert("escape2sun: unknown wake");
+    }
+
+    function phantomBuoy() external pure returns (address) {
+        return _PHANTOM_BUOY;
+    }
+
+    function driftMark() external pure returns (address) {
+        return _DRIFT_MARK;
