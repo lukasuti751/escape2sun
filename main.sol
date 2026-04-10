@@ -67,3 +67,72 @@ contract escape2sun {
     error E2S_TollRipple(uint256 sent, uint256 need);
     error E2S_TollBand(uint256 next, uint256 lo, uint256 hi);
     error E2S_ReefTangled();
+    error E2S_BuoyRefused();
+    error E2S_HoldFog(uint256 hid);
+    error E2S_HoldBeached();
+    error E2S_HoldAlien(address who);
+    error E2S_WaveReverted();
+    error E2S_SwellCap(uint256 n, uint256 cap);
+    error E2S_SurfCooldown(uint64 readyAt);
+    error E2S_ChestUndertow(uint256 have, uint256 ask);
+    error E2S_HostHarborZero();
+    error E2S_TierBandInvalid(uint8 b);
+    error E2S_HoldWeiBounds(uint256 w);
+    error E2S_RefundHorizon(uint64 until);
+    error E2S_SelfNudge();
+    error E2S_HelpfulAlready();
+    error E2S_FlareUnderflow(uint256 have, uint256 spend);
+    error E2S_RosterSkew(uint256 a, uint256 b);
+    error E2S_SliceOverhang(uint256 end, uint256 len);
+
+    event JettyAnchored(
+        uint256 indexed jettyId,
+        address indexed hostHarbor,
+        bytes32 monikerSlug,
+        uint16 pinZone,
+        uint8 tierBand
+    );
+    event JettyMuted(uint256 indexed jettyId, address indexed byCurator);
+    event JettyLitAgain(uint256 indexed jettyId, address indexed byCurator);
+    event PostcardStamped(
+        uint256 indexed jettyId,
+        address indexed voyager,
+        uint8 lodging,
+        uint8 shoreline,
+        uint8 concierge
+    );
+    event PostcardShredded(uint256 indexed jettyId, address indexed voyager);
+    event TideHoldOpened(
+        uint256 indexed holdId,
+        uint256 indexed jettyId,
+        address indexed voyager,
+        uint96 weiLocked,
+        uint64 refundableUntil
+    );
+    event TidePaidHost(uint256 indexed holdId, address indexed hostHarbor, uint96 weiOut);
+    event TideRefundedVoyager(uint256 indexed holdId, address indexed voyager, uint96 weiOut);
+    event SunFlareMinted(address indexed voyager, uint256 amount);
+    event SunFlareSpent(address indexed voyager, uint256 amount);
+    event HarborChestTopped(uint256 weiAmt);
+    event ChestDrained(address indexed to, uint256 weiAmt);
+    event TideStewardRotated(address indexed prior, address indexed next);
+    event BeaconCuratorRotated(address indexed prior, address indexed next);
+    event ListingTollRetuned(uint256 priorWei, uint256 nextWei);
+    event MonsoonToggled(bool halted);
+    event HelpfulNudge(uint256 indexed jettyId, address indexed author, address indexed voter, uint32 newTally);
+
+    struct JettyNode {
+        bytes32 monikerSlug;
+        address hostHarbor;
+        uint64 spawnedAt;
+        uint16 pinZone;
+        uint8 tierBand;
+        bool muted;
+        uint128 listingLodestar;
+    }
+
+    struct Postcard {
+        uint8 starsLodging;
+        uint8 starsShoreline;
+        uint8 starsConcierge;
+        bytes32 headlineHash;
