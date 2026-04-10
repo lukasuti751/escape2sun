@@ -274,3 +274,72 @@ contract escape2sun {
 
     function driftMark() external pure returns (address) {
         return _DRIFT_MARK;
+    }
+
+    function coralSentinel() external pure returns (address) {
+        return _CORAL_SENTINEL;
+    }
+
+    function spindleLight() external pure returns (address) {
+        return _SPINDLE_LIGHT;
+    }
+
+    function gullPerch() external pure returns (address) {
+        return _GULL_PERCH;
+    }
+
+    function duneMirror() external pure returns (address) {
+        return _DUNE_MIRROR;
+    }
+
+    function tideClockAddr() external pure returns (address) {
+        return _TIDE_CLOCK;
+    }
+
+    function kelpAnchor() external pure returns (address) {
+        return _KELP_ANCHOR;
+    }
+
+    function domainGlue() external view returns (bytes32) {
+        return keccak256(abi.encodePacked(chartSalt, _PHANTOM_BUOY, _KELP_ANCHOR, address(this)));
+    }
+
+    function retuneListingToll(uint256 nextWei) external onlyDirector {
+        if (nextWei < LISTING_TOLL_FLOOR_WEI || nextWei > LISTING_TOLL_CEIL_WEI) {
+            revert E2S_TollBand(nextWei, LISTING_TOLL_FLOOR_WEI, LISTING_TOLL_CEIL_WEI);
+        }
+        uint256 prior = listingTollWei;
+        listingTollWei = nextWei;
+        emit ListingTollRetuned(prior, nextWei);
+    }
+
+    function toggleMonsoon(bool halted) external directorOrSteward {
+        monsoonHalted = halted;
+        emit MonsoonToggled(halted);
+    }
+
+    function rotateTideSteward(address next) external onlyDirector {
+        address prior = tideSteward;
+        tideSteward = next;
+        emit TideStewardRotated(prior, next);
+    }
+
+    function rotateBeaconCurator(address next) external onlyDirector {
+        address prior = beaconCurator;
+        beaconCurator = next;
+        emit BeaconCuratorRotated(prior, next);
+    }
+
+    function anchorJetty(bytes32 monikerSlug, uint16 pinZone, uint8 tierBand, address hostHarbor)
+        external
+        payable
+        notMonsoon
+        returns (uint256 jettyId)
+    {
+        if (monikerSlug == bytes32(0)) revert E2S_SlugVacant();
+        if (pinZone == 0) revert E2S_ZoneTyphoon(pinZone);
+        if (tierBand > TIER_BAND_CAP) revert E2S_TierBandInvalid(tierBand);
+        if (hostHarbor == address(0)) revert E2S_HostHarborZero();
+        if (msg.value != listingTollWei) revert E2S_TollRipple(msg.value, listingTollWei);
+
+        jettyId = nextJettyId;
