@@ -619,3 +619,72 @@ contract escape2sun {
         if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
         uint256 sumL;
         uint256 sumS;
+        uint256 sumC;
+        uint256 samples;
+        for (uint256 i; i < n; ) {
+            Postcard storage p = _postcards[jettyId][voyagers[i]];
+            if (p.etchedAt != 0 && !p.shredded) {
+                sumL += p.starsLodging;
+                sumS += p.starsShoreline;
+                sumC += p.starsConcierge;
+                unchecked {
+                    ++samples;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return TideLedgerMath.triScoreAverage(sumL, sumS, sumC, samples);
+    }
+
+    function sweepJettiesWindow(uint256 startId, uint256 maxScan)
+        external
+        view
+        returns (
+            uint256 found,
+            uint256[] memory ids,
+            bool[] memory muted,
+            uint16[] memory zones,
+            uint8[] memory tiers,
+            address[] memory hosts
+        )
+    {
+        if (maxScan == 0 || maxScan > MAX_SWEEP_SCAN) revert E2S_SwellCap(maxScan, MAX_SWEEP_SCAN);
+        ids = new uint256[](maxScan);
+        muted = new bool[](maxScan);
+        zones = new uint16[](maxScan);
+        tiers = new uint8[](maxScan);
+        hosts = new address[](maxScan);
+        uint256 w;
+        for (uint256 id = startId; w < maxScan && id < nextJettyId; ) {
+            JettyNode storage node = _jetties[id];
+            if (node.spawnedAt != 0) {
+                ids[w] = id;
+                muted[w] = node.muted;
+                zones[w] = node.pinZone;
+                tiers[w] = node.tierBand;
+                hosts[w] = node.hostHarbor;
+                unchecked {
+                    ++w;
+                }
+            }
+            unchecked {
+                ++id;
+            }
+        }
+        found = w;
+    }
+
+    function pageHostJetties(address host, uint256 offset, uint256 maxScan)
+        external
+        view
+        returns (uint256 found, uint256[] memory jettyIds)
+    {
+        if (maxScan == 0 || maxScan > MAX_HOST_JETTIES_PAGED) revert E2S_SwellCap(maxScan, MAX_HOST_JETTIES_PAGED);
+        uint256 total = _hostJettyCount[host];
+        if (offset >= total) {
+            return (0, new uint256[](maxScan));
+        }
+        jettyIds = new uint256[](maxScan);
+        uint256 w;
