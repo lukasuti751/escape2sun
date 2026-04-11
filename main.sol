@@ -412,3 +412,72 @@ contract escape2sun {
         p.starsLodging = L;
         p.starsShoreline = S;
         p.starsConcierge = C;
+        p.headlineHash = headlineHash;
+        p.blurbHash = blurbHash;
+        p.etchedAt = uint64(block.timestamp);
+        p.helpfulTally = 0;
+        p.shredded = false;
+
+        _lastReviewAt[msg.sender] = uint64(block.timestamp);
+
+        unchecked {
+            sunFlareBalances[msg.sender] += 13;
+        }
+        emit SunFlareMinted(msg.sender, 13);
+        emit PostcardStamped(jettyId, msg.sender, L, S, C);
+    }
+
+    function shredPostcard(uint256 jettyId) external {
+        Postcard storage p = _postcards[jettyId][msg.sender];
+        if (p.etchedAt == 0 || p.shredded) revert E2S_PostcardBlank();
+        p.shredded = true;
+        emit PostcardShredded(jettyId, msg.sender);
+    }
+
+    function nudgeHelpful(uint256 jettyId, address author) external notMonsoon {
+        if (author == msg.sender) revert E2S_SelfNudge();
+        Postcard storage target = _postcards[jettyId][author];
+        if (target.etchedAt == 0 || target.shredded) revert E2S_PostcardBlank();
+
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+
+        if (_helpfulCast[jettyId][author][msg.sender]) revert E2S_HelpfulAlready();
+        _helpfulCast[jettyId][author][msg.sender] = true;
+
+        unchecked {
+            target.helpfulTally += 1;
+        }
+        emit HelpfulNudge(jettyId, author, msg.sender, target.helpfulTally);
+
+        unchecked {
+            sunFlareBalances[author] += 3;
+        }
+        emit SunFlareMinted(author, 3);
+    }
+
+    function openTideHold(uint256 jettyId, uint64 refundableUntil) external payable notMonsoon nonReentrant returns (uint256 holdId) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        if (j.muted) revert E2S_JettyMuted();
+        if (msg.value < MIN_TIDE_HOLD_WEI || msg.value > MAX_TIDE_HOLD_WEI) revert E2S_HoldWeiBounds(msg.value);
+        if (refundableUntil < block.timestamp + MIN_REFUND_HORIZON_SEC) revert E2S_RefundHorizon(refundableUntil);
+        if (refundableUntil > block.timestamp + MAX_REFUND_HORIZON_SEC) revert E2S_RefundHorizon(refundableUntil);
+
+        holdId = nextHoldId;
+        unchecked {
+            nextHoldId = holdId + 1;
+        }
+
+        _holds[holdId] = TideHold({
+            voyager: msg.sender,
+            jettyId: jettyId,
+            hostHarbor: j.hostHarbor,
+            weiLocked: uint96(msg.value),
+            refundableUntil: refundableUntil,
+            paidHost: false,
+            refunded: false
+        });
+
+        lifetimeTideWei += msg.value;
+        emit TideHoldOpened(holdId, jettyId, msg.sender, uint96(msg.value), refundableUntil);
