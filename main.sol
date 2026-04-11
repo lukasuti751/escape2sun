@@ -688,3 +688,72 @@ contract escape2sun {
         }
         jettyIds = new uint256[](maxScan);
         uint256 w;
+        for (uint256 i = offset; i < total && w < maxScan; ) {
+            jettyIds[w] = _hostJettyAt[host][i];
+            unchecked {
+                ++w;
+                ++i;
+            }
+        }
+        found = w;
+    }
+
+    function holdRiskBand(uint256 holdId) external view returns (uint8 band) {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) revert E2S_HoldFog(holdId);
+        return TideLedgerMath.tideRiskBand(h.refundableUntil, uint64(block.timestamp));
+    }
+
+    function voyagerFlareTier(address voyager) external view returns (uint8 tier) {
+        return TideLedgerMath.flareTier(sunFlareBalances[voyager]);
+    }
+
+    function packJettyMeta(uint16 pinZone, uint8 tierBand) external pure returns (uint24 packed) {
+        return ShoreBits.packZoneMeta(pinZone, tierBand);
+    }
+
+    function unpackJettyMeta(uint24 packed) external pure returns (uint16 pinZone, uint8 tierBand) {
+        return ShoreBits.unpackZone(packed);
+    }
+
+    function jettyDigestPreview(bytes32 monikerSlug, uint16 pinZone, address hostHarbor, uint256 jettyId)
+        external
+        view
+        returns (uint128 lodestar)
+    {
+        lodestar = uint128(uint256(keccak256(abi.encodePacked(chartSalt, monikerSlug, pinZone, hostHarbor, jettyId))));
+    }
+
+    function postcardFingerprint(
+        uint256 jettyId,
+        address voyager,
+        bytes32 headlineHash,
+        bytes32 blurbHash
+    ) external view returns (bytes32 fp) {
+        fp = keccak256(abi.encodePacked(chartSalt, jettyId, voyager, headlineHash, blurbHash));
+    }
+
+    function holdFingerprint(uint256 holdId, address voyager, uint256 jettyId, uint96 weiLocked, uint64 until)
+        external
+        view
+        returns (bytes32 fp)
+    {
+        fp = keccak256(abi.encodePacked(chartSalt, holdId, voyager, jettyId, weiLocked, until));
+    }
+
+    function beaconChainTag() external view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.chainid, chartSalt, address(this), _SPINDLE_LIGHT));
+    }
+
+    function driftComposite() external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_DRIFT_MARK, _DUNE_MIRROR, _GULL_PERCH));
+    }
+
+    function coralRing() external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_CORAL_SENTINEL, _TIDE_CLOCK, _PHANTOM_BUOY));
+    }
+
+    function surfSnapshot()
+        external
+        view
+        returns (
