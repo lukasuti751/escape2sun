@@ -1171,3 +1171,66 @@ contract escape2sun {
     function postcardHeadlineBlurb(uint256 jettyId, address voyager)
         external
         view
+        returns (bytes32 headline, bytes32 blurb)
+    {
+        Postcard storage p = _postcards[jettyId][voyager];
+        if (p.etchedAt == 0) revert E2S_PostcardBlank();
+        return (p.headlineHash, p.blurbHash);
+    }
+
+    function jettyMonikerHost(uint256 jettyId)
+        external
+        view
+        returns (bytes32 moniker, address hostHarbor, uint16 pinZone, uint8 tierBand)
+    {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        return (j.monikerSlug, j.hostHarbor, j.pinZone, j.tierBand);
+    }
+
+    function roleTriad() external view returns (address director, address stewardAddr, address beaconAddr) {
+        return (quayDirector, tideSteward, beaconCurator);
+    }
+
+    function tollEnvelope(uint256 weiAmt) external view returns (bool matches) {
+        matches = (weiAmt == listingTollWei);
+    }
+
+    function monsoonAndToll() external view returns (bool halted, uint256 toll) {
+        return (monsoonHalted, listingTollWei);
+    }
+
+    function lifetimeTriad() external view returns (uint256 listings, uint256 tides, uint256 chestOut) {
+        return (lifetimeListingWei, lifetimeTideWei, lifetimeChestOutWei);
+    }
+
+    function sweepEcho(uint256 start, uint256 span, bytes32 saltMix) external view returns (bytes32) {
+        if (span > MAX_SWEEP_SCAN) revert E2S_SwellCap(span, MAX_SWEEP_SCAN);
+        return keccak256(abi.encodePacked(start, span, saltMix, nextJettyId, chartSalt));
+    }
+
+    function buoyFloat(uint256 x) external pure returns (uint256) {
+        unchecked {
+            return (x * 1_103_471_861_433) % 1_000_000_007;
+        }
+    }
+
+    function deckShuffle(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(a, b, c, d, e, _PHANTOM_BUOY));
+    }
+
+    function shorelineXor(bytes32 a, bytes32 b) external pure returns (bytes32) {
+        return a ^ b;
+    }
+
+    function cabanaSlice(bytes calldata blob, uint256 start, uint256 len) external pure returns (bytes memory slice) {
+        if (start + len > blob.length) revert E2S_SliceOverhang(start + len, blob.length);
+        slice = new bytes(len);
+        for (uint256 i; i < len; ) {
+            slice[i] = blob[start + i];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+}
