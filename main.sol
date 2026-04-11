@@ -481,3 +481,72 @@ contract escape2sun {
 
         lifetimeTideWei += msg.value;
         emit TideHoldOpened(holdId, jettyId, msg.sender, uint96(msg.value), refundableUntil);
+    }
+
+    function refundTideHold(uint256 holdId) external nonReentrant {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) revert E2S_HoldFog(holdId);
+        if (h.refunded || h.paidHost) revert E2S_HoldBeached();
+        if (msg.sender != h.voyager) revert E2S_HoldAlien(msg.sender);
+        if (block.timestamp > h.refundableUntil) revert E2S_RefundHorizon(h.refundableUntil);
+
+        uint256 payout = uint256(h.weiLocked);
+        h.refunded = true;
+        h.weiLocked = 0;
+
+        (bool ok, ) = payable(msg.sender).call{value: payout}("");
+        if (!ok) revert E2S_WaveReverted();
+        emit TideRefundedVoyager(holdId, msg.sender, uint96(payout));
+    }
+
+    function payTideToHost(uint256 holdId) external nonReentrant {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) revert E2S_HoldFog(holdId);
+        if (h.refunded || h.paidHost) revert E2S_HoldBeached();
+        if (block.timestamp <= h.refundableUntil) revert E2S_RefundHorizon(h.refundableUntil);
+        if (msg.sender != h.hostHarbor) revert E2S_HoldAlien(msg.sender);
+
+        uint256 payout = uint256(h.weiLocked);
+        address host = h.hostHarbor;
+        h.paidHost = true;
+        h.weiLocked = 0;
+
+        (bool ok, ) = payable(host).call{value: payout}("");
+        if (!ok) revert E2S_WaveReverted();
+        emit TidePaidHost(holdId, host, uint96(payout));
+    }
+
+    function withdrawHarborChest(address payable to, uint256 weiAmt) external onlyDirector nonReentrant {
+        if (weiAmt > harborChestWei) revert E2S_ChestUndertow(harborChestWei, weiAmt);
+        harborChestWei -= weiAmt;
+        lifetimeChestOutWei += weiAmt;
+        (bool ok, ) = to.call{value: weiAmt}("");
+        if (!ok) revert E2S_WaveReverted();
+        emit ChestDrained(to, weiAmt);
+    }
+
+    function grantFlares(address voyager, uint256 amt) external curatorOrDirector {
+        unchecked {
+            sunFlareBalances[voyager] += amt;
+        }
+        emit SunFlareMinted(voyager, amt);
+    }
+
+    function burnFlaresForBoost(uint256 jettyId) external notMonsoon {
+        if (sunFlareBalances[msg.sender] < FLARE_BOOST_COST) {
+            revert E2S_FlareUnderflow(sunFlareBalances[msg.sender], FLARE_BOOST_COST);
+        }
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        unchecked {
+            sunFlareBalances[msg.sender] -= FLARE_BOOST_COST;
+        }
+        emit SunFlareSpent(msg.sender, FLARE_BOOST_COST);
+        j.listingLodestar = TideLedgerMath.mixLodestar(
+            j.listingLodestar,
+            chartSalt,
+            msg.sender,
+            block.number,
+            FLARE_BOOST_COST
+        );
+    }
