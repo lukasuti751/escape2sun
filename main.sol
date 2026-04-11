@@ -550,3 +550,72 @@ contract escape2sun {
             FLARE_BOOST_COST
         );
     }
+
+    function readJetty(uint256 jettyId) external view returns (JettyNode memory) {
+        return _jetties[jettyId];
+    }
+
+    function readPostcard(uint256 jettyId, address voyager) external view returns (Postcard memory) {
+        return _postcards[jettyId][voyager];
+    }
+
+    function readHold(uint256 holdId) external view returns (TideHold memory) {
+        return _holds[holdId];
+    }
+
+    function hostJettyCount(address host) external view returns (uint256) {
+        return _hostJettyCount[host];
+    }
+
+    function hostJettyAt(address host, uint256 idx) external view returns (uint256) {
+        return _hostJettyAt[host][idx];
+    }
+
+    function helpfulCast(uint256 jettyId, address author, address voter) external view returns (bool) {
+        return _helpfulCast[jettyId][author][voter];
+    }
+
+    function lastReviewAt(address voyager) external view returns (uint64) {
+        return _lastReviewAt[voyager];
+    }
+
+    function postcardQuilt(uint256 jettyId, address[] calldata voyagers)
+        external
+        view
+        returns (
+            uint256 sumLodge,
+            uint256 sumShore,
+            uint256 sumCon,
+            uint256 samples,
+            bool[] memory shredded
+        )
+    {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        uint256 n = voyagers.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        shredded = new bool[](n);
+        for (uint256 i; i < n; ) {
+            Postcard storage p = _postcards[jettyId][voyagers[i]];
+            shredded[i] = p.shredded;
+            if (p.etchedAt != 0 && !p.shredded) {
+                sumLodge += p.starsLodging;
+                sumShore += p.starsShoreline;
+                sumCon += p.starsConcierge;
+                unchecked {
+                    samples += 1;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function quiltTriAverage(uint256 jettyId, address[] calldata voyagers) external view returns (uint256 avg) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        uint256 n = voyagers.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        uint256 sumL;
+        uint256 sumS;
