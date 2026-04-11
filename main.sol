@@ -964,3 +964,72 @@ contract escape2sun {
     {
         Postcard storage p = _postcards[jettyId][author];
         if (p.etchedAt == 0) revert E2S_PostcardBlank();
+        uint256 n = voters.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        cast = new bool[](n);
+        for (uint256 i; i < n; ) {
+            cast[i] = _helpfulCast[jettyId][author][voters[i]];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function shorelineEcho(bytes32 a, bytes32 b, uint256 saltNonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(chartSalt, a, b, saltNonce, _KELP_ANCHOR));
+    }
+
+    function cabanaRibbon(uint256 jettyId, address host, uint16 zone) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(jettyId, host, zone, chartSalt, _CORAL_SENTINEL));
+    }
+
+    function iceLollyStick(address voyager, uint64 ts, uint8 stars) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(voyager, ts, stars, chartSalt, _GULL_PERCH));
+    }
+
+    function tripadvisorMosaic(uint256[] calldata jettyIds, address[] calldata hosts)
+        external
+        view
+        returns (bytes32[] memory tiles)
+    {
+        uint256 n = jettyIds.length;
+        if (n != hosts.length) revert E2S_RosterSkew(n, hosts.length);
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        tiles = new bytes32[](n);
+        for (uint256 i; i < n; ) {
+            tiles[i] = keccak256(abi.encodePacked(jettyIds[i], hosts[i], chartSalt, block.chainid));
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function monsoonLatch(bytes32 priorSalt, uint256 blockNum) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(priorSalt, blockNum, monsoonHalted, chartSalt));
+    }
+
+    function stewardTrail(address prior, address next, uint256 ts) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(prior, next, ts, tideSteward, beaconCurator));
+    }
+
+    function chestWatermark(uint256 weiAmt, address to) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(harborChestWei, weiAmt, to, chartSalt));
+    }
+
+    function tideWatermark(uint256 holdId, uint96 weiLocked) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(holdId, weiLocked, nextHoldId, chartSalt));
+    }
+
+    function postcardWatermark(uint256 jettyId, address voyager, uint32 helpful) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(jettyId, voyager, helpful, chartSalt, _DRIFT_MARK));
+    }
+
+    function jettyLighthouse(uint256 jettyId) external view returns (uint128 lodestar, uint64 spawned, bool muted) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        return (j.listingLodestar, j.spawnedAt, j.muted);
+    }
+
+    function holdHarborLine(uint256 holdId)
+        external
+        view
