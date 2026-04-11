@@ -1102,3 +1102,72 @@ contract escape2sun {
     function snorkelTrail(bytes32 h1, bytes32 h2, bytes32 h3) external pure returns (bytes32) {
         return keccak256(abi.encodePacked(h1, h2, h3, _KELP_ANCHOR));
     }
+
+    function boardwalkStamp(address host, uint16 zone, uint8 tier) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(host, zone, tier, chartSalt, _TIDE_CLOCK));
+    }
+
+    function resortVeil(uint256 jettyId, bytes32 moniker, uint128 lodestar) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(jettyId, moniker, lodestar, chartSalt, _DUNE_MIRROR));
+    }
+
+    function kayakBlend(uint256 a, uint256 b, uint256 c, uint256 d) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(a, b, c, d, _GULL_PERCH));
+    }
+
+    function pierLedgerMix(uint256 lifetimeListings, uint256 lifetimeTides, uint256 outChest)
+        external
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(lifetimeListings, lifetimeTides, outChest, _CORAL_SENTINEL));
+    }
+
+    function hammockScore(uint8 l, uint8 s, uint8 c) external pure returns (uint256) {
+        uint256 u = uint256(ShoreBits.clampStars(l));
+        u += uint256(ShoreBits.clampStars(s));
+        u += uint256(ShoreBits.clampStars(c));
+        return u;
+    }
+
+    function flipFlopMask(uint256 x, uint256 y) external pure returns (uint256) {
+        return (x ^ y) & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    }
+
+    function sandcastleTier(uint256 jettyId, address host) external view returns (uint8 band) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        if (j.hostHarbor != host) revert E2S_HoldAlien(host);
+        band = j.tierBand;
+    }
+
+    function cabanaCooldownLeft(address voyager) external view returns (uint64 left) {
+        uint64 last = _lastReviewAt[voyager];
+        if (last == 0) return 0;
+        uint256 ready = uint256(last) + uint256(REVIEW_COOLDOWN_SEC);
+        if (block.timestamp >= ready) return 0;
+        left = uint64(ready - block.timestamp);
+    }
+
+    function tideRefundCountdown(uint256 holdId) external view returns (uint64 left, bool voyagerWindow) {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) revert E2S_HoldFog(holdId);
+        voyagerWindow = block.timestamp <= h.refundableUntil;
+        if (!voyagerWindow) return (0, false);
+        left = uint64(h.refundableUntil - uint64(block.timestamp));
+    }
+
+    function hostPayoutCountdown(uint256 holdId) external view returns (uint64 left, bool hostWindow) {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) revert E2S_HoldFog(holdId);
+        hostWindow = block.timestamp > h.refundableUntil;
+        if (!hostWindow) {
+            left = uint64(h.refundableUntil - uint64(block.timestamp));
+            return (left, false);
+        }
+        left = 0;
+    }
+
+    function postcardHeadlineBlurb(uint256 jettyId, address voyager)
+        external
+        view
