@@ -895,3 +895,72 @@ contract escape2sun {
         returns (TideHold[] memory holds, bool[] memory live)
     {
         uint256 n = holdIds.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        holds = new TideHold[](n);
+        live = new bool[](n);
+        for (uint256 i; i < n; ) {
+            TideHold storage h = _holds[holdIds[i]];
+            if (h.weiLocked != 0) {
+                holds[i] = h;
+                live[i] = true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function clampStarsPublic(uint8 s) external pure returns (uint8) {
+        return ShoreBits.clampStars(s);
+    }
+
+    function triAveragePublic(uint256 sumL, uint256 sumS, uint256 sumC, uint256 n) external pure returns (uint256) {
+        return TideLedgerMath.triScoreAverage(sumL, sumS, sumC, n);
+    }
+
+    function tideBandPublic(uint64 refundableUntil, uint64 nowTs) external pure returns (uint8) {
+        return TideLedgerMath.tideRiskBand(refundableUntil, nowTs);
+    }
+
+    function flareTierPublic(uint256 bal) external pure returns (uint8) {
+        return TideLedgerMath.flareTier(bal);
+    }
+
+    function mixLodestarPublic(uint128 prior, bytes32 salt, address who, uint256 blk, uint256 costWei)
+        external
+        pure
+        returns (uint128)
+    {
+        return TideLedgerMath.mixLodestar(prior, salt, who, blk, costWei);
+    }
+
+    function nudgeHelpfulQa(uint256 jettyId, address author, address voter)
+        external
+        view
+        returns (bool ok, uint8 code)
+    {
+        if (author == voter) return (false, 1);
+        Postcard storage target = _postcards[jettyId][author];
+        if (target.etchedAt == 0 || target.shredded) return (false, 2);
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) return (false, 3);
+        if (_helpfulCast[jettyId][author][voter]) return (false, 4);
+        if (monsoonHalted) return (false, 5);
+        return (true, 0);
+    }
+
+    function burnBoostQa(uint256 jettyId, address voyager) external view returns (bool ok, uint8 code) {
+        if (sunFlareBalances[voyager] < FLARE_BOOST_COST) return (false, 1);
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) return (false, 2);
+        if (monsoonHalted) return (false, 3);
+        return (true, 0);
+    }
+
+    function helpfulMatrix(uint256 jettyId, address author, address[] calldata voters)
+        external
+        view
+        returns (bool[] memory cast)
+    {
+        Postcard storage p = _postcards[jettyId][author];
+        if (p.etchedAt == 0) revert E2S_PostcardBlank();
