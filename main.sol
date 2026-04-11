@@ -826,3 +826,72 @@ contract escape2sun {
         if (weiAmt > harborChestWei) return (false, 1);
         return (true, 0);
     }
+
+    function refundTideQa(uint256 holdId, address caller) external view returns (bool ok, uint8 code) {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) return (false, 1);
+        if (h.refunded || h.paidHost) return (false, 2);
+        if (caller != h.voyager) return (false, 3);
+        if (block.timestamp > h.refundableUntil) return (false, 4);
+        return (true, 0);
+    }
+
+    function payHostQa(uint256 holdId, address caller) external view returns (bool ok, uint8 code) {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0) return (false, 1);
+        if (h.refunded || h.paidHost) return (false, 2);
+        if (block.timestamp <= h.refundableUntil) return (false, 3);
+        if (caller != h.hostHarbor) return (false, 4);
+        return (true, 0);
+    }
+
+    function batchReadJetties(uint256[] calldata jettyIds)
+        external
+        view
+        returns (JettyNode[] memory nodes, bool[] memory known)
+    {
+        uint256 n = jettyIds.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        nodes = new JettyNode[](n);
+        known = new bool[](n);
+        for (uint256 i; i < n; ) {
+            JettyNode storage j = _jetties[jettyIds[i]];
+            if (j.spawnedAt != 0) {
+                nodes[i] = j;
+                known[i] = true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function batchReadPostcards(uint256 jettyId, address[] calldata voyagers)
+        external
+        view
+        returns (Postcard[] memory cards, bool[] memory present)
+    {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        uint256 n = voyagers.length;
+        if (n > MAX_SWEEP_SCAN) revert E2S_SwellCap(n, MAX_SWEEP_SCAN);
+        cards = new Postcard[](n);
+        present = new bool[](n);
+        for (uint256 i; i < n; ) {
+            Postcard storage p = _postcards[jettyId][voyagers[i]];
+            if (p.etchedAt != 0) {
+                cards[i] = p;
+                present[i] = true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function batchReadHolds(uint256[] calldata holdIds)
+        external
+        view
+        returns (TideHold[] memory holds, bool[] memory live)
+    {
+        uint256 n = holdIds.length;
