@@ -1033,3 +1033,72 @@ contract escape2sun {
     function holdHarborLine(uint256 holdId)
         external
         view
+        returns (address voyager, address hostHarbor, uint96 weiLocked, uint64 until, bool paid, bool refunded)
+    {
+        TideHold storage h = _holds[holdId];
+        if (h.weiLocked == 0 && !h.paidHost && !h.refunded) revert E2S_HoldFog(holdId);
+        return (h.voyager, h.hostHarbor, h.weiLocked, h.refundableUntil, h.paidHost, h.refunded);
+    }
+
+    function postcardHarborLine(uint256 jettyId, address voyager)
+        external
+        view
+        returns (uint8 L, uint8 S, uint8 C, uint32 helpful, bool shredded, uint64 etched)
+    {
+        Postcard storage p = _postcards[jettyId][voyager];
+        if (p.etchedAt == 0) revert E2S_PostcardBlank();
+        return (p.starsLodging, p.starsShoreline, p.starsConcierge, p.helpfulTally, p.shredded, p.etchedAt);
+    }
+
+    function contractEthBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function chestVsBalanceSanity() external view returns (int256 delta) {
+        uint256 bal = address(this).balance;
+        delta = int256(bal) - int256(harborChestWei);
+    }
+
+    function horizonPulseNow() external view returns (HorizonPulse memory pulse) {
+        pulse.chainId = uint64(block.chainid);
+        pulse.timestamp = uint64(block.timestamp);
+        pulse.jettyHead = nextJettyId;
+        pulse.holdHead = nextHoldId;
+        pulse.chestWei = harborChestWei;
+        pulse.listingToll = listingTollWei;
+        pulse.monsoon = monsoonHalted;
+        pulse.chart = chartSalt;
+        pulse.director = quayDirector;
+        pulse.steward = tideSteward;
+        pulse.beacon = beaconCurator;
+    }
+
+    function deckRibbonFor(address voyager, uint256 jettyId, uint256 holdId)
+        external
+        view
+        returns (DeckRibbon memory ribbon)
+    {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) revert E2S_JettyUnknown(jettyId);
+        TideHold storage h = _holds[holdId];
+        ribbon.sumWeiHints = uint256(h.weiLocked) + harborChestWei + listingTollWei;
+        ribbon.flareBand = TideLedgerMath.flareTier(sunFlareBalances[voyager]);
+        ribbon.tideBand = h.weiLocked == 0
+            ? uint8(0)
+            : TideLedgerMath.tideRiskBand(h.refundableUntil, uint64(block.timestamp));
+        ribbon.pinEcho = j.pinZone;
+        ribbon.echoA = keccak256(abi.encodePacked(voyager, jettyId, chartSalt));
+        ribbon.echoB = keccak256(abi.encodePacked(holdId, j.hostHarbor, _SPINDLE_LIGHT));
+    }
+
+    function lifeguardChecksum(address a, address b, address c) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(chartSalt, a, b, c, quayDirector));
+    }
+
+    function parasolHash(uint256 jettyId, uint256 holdId, uint256 nonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(jettyId, holdId, nonce, chartSalt, monsoonHalted));
+    }
+
+    function snorkelTrail(bytes32 h1, bytes32 h2, bytes32 h3) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(h1, h2, h3, _KELP_ANCHOR));
+    }
