@@ -757,3 +757,72 @@ contract escape2sun {
         external
         view
         returns (
+            uint256 jettyHead,
+            uint256 holdHead,
+            uint256 chestWei,
+            bool monsoon,
+            uint256 tollWei
+        )
+    {
+        return (nextJettyId, nextHoldId, harborChestWei, monsoonHalted, listingTollWei);
+    }
+
+    function ledgerFootprints()
+        external
+        view
+        returns (uint256 listingsIn, uint256 tideIn, uint256 chestOut)
+    {
+        return (lifetimeListingWei, lifetimeTideWei, lifetimeChestOutWei);
+    }
+
+    function tideHoldOpenQa(uint256 jettyId, uint256 weiAmt, uint64 refundableUntil) external view returns (bool ok, uint8 code) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) return (false, 1);
+        if (j.muted) return (false, 2);
+        if (weiAmt < MIN_TIDE_HOLD_WEI || weiAmt > MAX_TIDE_HOLD_WEI) return (false, 3);
+        if (refundableUntil < block.timestamp + MIN_REFUND_HORIZON_SEC) return (false, 4);
+        if (refundableUntil > block.timestamp + MAX_REFUND_HORIZON_SEC) return (false, 5);
+        if (monsoonHalted) return (false, 6);
+        return (true, 0);
+    }
+
+    function postcardStampQa(
+        uint256 jettyId,
+        bytes32 headlineHash,
+        bytes32 blurbHash,
+        address voyager
+    ) external view returns (bool ok, uint8 code, uint64 readyAt) {
+        JettyNode storage j = _jetties[jettyId];
+        if (j.spawnedAt == 0) return (false, 1, 0);
+        if (j.muted) return (false, 2, 0);
+        if (headlineHash == bytes32(0) || blurbHash == bytes32(0)) return (false, 3, 0);
+        Postcard storage p = _postcards[jettyId][voyager];
+        if (p.etchedAt != 0 && !p.shredded) return (false, 4, 0);
+        uint64 last = _lastReviewAt[voyager];
+        if (block.timestamp < last + REVIEW_COOLDOWN_SEC) {
+            return (false, 5, uint64(last + REVIEW_COOLDOWN_SEC));
+        }
+        if (monsoonHalted) return (false, 6, 0);
+        return (true, 0, 0);
+    }
+
+    function anchorJettyQa(
+        bytes32 monikerSlug,
+        uint16 pinZone,
+        uint8 tierBand,
+        address hostHarbor,
+        uint256 weiSent
+    ) external view returns (bool ok, uint8 code) {
+        if (monikerSlug == bytes32(0)) return (false, 1);
+        if (pinZone == 0) return (false, 2);
+        if (tierBand > TIER_BAND_CAP) return (false, 3);
+        if (hostHarbor == address(0)) return (false, 4);
+        if (weiSent != listingTollWei) return (false, 5);
+        if (monsoonHalted) return (false, 6);
+        return (true, 0);
+    }
+
+    function withdrawChestQa(uint256 weiAmt) external view returns (bool ok, uint8 code) {
+        if (weiAmt > harborChestWei) return (false, 1);
+        return (true, 0);
+    }
